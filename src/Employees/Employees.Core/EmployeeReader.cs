@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace Employees.Core
 {
@@ -11,25 +11,31 @@ namespace Employees.Core
     /// </summary>
     public class EmployeeReader
     {
+        public EmployeeReader()
+        {
+            this.Separator = ',';
+        }
+
         public char Separator { get; set; }
 
         public CultureInfo DateTimeCulture { get; set; }
 
-        public IEnumerable<EmployeeRecord> EnumerateRecords(Stream stream)
+        public async Task<IReadOnlyCollection<EmployeeRecord>> ReadRecordsAsync(Stream stream)
         {
+            List<EmployeeRecord> records = new List<EmployeeRecord>();
             StreamReader reader = new StreamReader(stream);
             string line;
-            string[] tokens;
             while (!reader.EndOfStream)
             {
-                line = reader.ReadLine();
-                tokens = line.Split(Separator);
-                yield return ParseEmployeeRecord(tokens);
+                line = await reader.ReadLineAsync();
+                records.Add(ParseEmployeeRecord(line));
             }
+            return records;
         }
 
-        public EmployeeRecord ParseEmployeeRecord(string[] tokens)
+        public EmployeeRecord ParseEmployeeRecord(string line)
         {
+            string[] tokens = line.Split(this.Separator);
             if (tokens.Length != 4)
                 throw new InvalidDataException("Employee record not formatted correctly");
 

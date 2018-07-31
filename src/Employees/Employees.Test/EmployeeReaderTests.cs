@@ -1,5 +1,6 @@
 ﻿using Employees.Core;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace Employees.Test
     public class EmployeeReaderTests
     {
         [Fact]
-        public void ReadsEmployees_SingleDateFormat()
+        public async void ReadsEmployees_SingleDateFormat()
         {
             // Arrange
             EmployeeReader target = new EmployeeReader();
@@ -21,10 +22,10 @@ namespace Employees.Test
                 "218, 10, 2012-05-16, NULL" + Environment.NewLine +
                 "143, 10, 2009-01-01, 2011-04-27";
             Stream data = new MemoryStream(Encoding.Default.GetBytes(fileContents));
-            EmployeeRecord[] records;
+            IReadOnlyCollection<EmployeeRecord> records;
 
             // Act
-            records = target.EnumerateRecords(data).ToArray();
+            records = await target.ReadRecordsAsync(data);
 
             data.Close();
 
@@ -55,7 +56,7 @@ namespace Employees.Test
         [InlineData("dd/MM/yyyy")]
         [InlineData("dd-MM-yyyy")]
         [InlineData("d-M-yyyy")]
-        public void ReadsEmployees_DateFormat(string formatString)
+        public async void ReadsEmployees_DateFormat(string formatString)
         {
             // Arrange
             EmployeeReader target = new EmployeeReader();
@@ -67,10 +68,10 @@ namespace Employees.Test
                 $"143, 10, {new DateTime(2009, 01, 01).ToString(formatString, CultureInfo.InvariantCulture)}," +
                     $" {new DateTime(2011, 04, 27).ToString(formatString, CultureInfo.InvariantCulture)}";
             Stream data = new MemoryStream(Encoding.Default.GetBytes(fileContents));
-            EmployeeRecord[] records;
+            IReadOnlyCollection<EmployeeRecord> records;
 
             // Act
-            records = target.EnumerateRecords(data).ToArray();
+            records = await target.ReadRecordsAsync(data);
 
             data.Close();
 
@@ -98,7 +99,7 @@ namespace Employees.Test
         }
 
         [Fact]
-        public void ReadsEmployees_SpecifiedDateCulture()
+        public async void ReadsEmployees_SpecifiedDateCulture()
         {
             // Arrange
             EmployeeReader target = new EmployeeReader();
@@ -111,10 +112,10 @@ namespace Employees.Test
                 $"143, 10, {new DateTime(2009, 01, 01).ToString(target.DateTimeCulture)}," +
                     $" {new DateTime(2011, 04, 27).ToString(target.DateTimeCulture)}";
             Stream data = new MemoryStream(Encoding.Default.GetBytes(fileContents));
-            EmployeeRecord[] records;
+            IReadOnlyCollection<EmployeeRecord> records;
 
             // Act
-            records = target.EnumerateRecords(data).ToArray();
+            records = await target.ReadRecordsAsync(data);
 
             data.Close();
 
@@ -147,16 +148,10 @@ namespace Employees.Test
             // Arrange
             EmployeeReader target = new EmployeeReader();
             target.Separator = ',';
-            string fileContents =
-                "14t, 12, 2013-11-01, 2014-01-05" + Environment.NewLine +
-                "218, 10, 2012-05-16, NULL" + Environment.NewLine +
-                "143, 10, 2009-01-01, 2011-04-27";
-            Stream data = new MemoryStream(Encoding.Default.GetBytes(fileContents));
+            string line = "14t, 12, 2013-11-01, 2014-01-05";
 
             // Act
-            Assert.Throws<FormatException>(() => target.EnumerateRecords(data).ToArray());
-
-            data.Close();
+            Assert.Throws<FormatException>(() => target.ParseEmployeeRecord(line));
         }
 
         [Fact]
@@ -165,16 +160,10 @@ namespace Employees.Test
             // Arrange
             EmployeeReader target = new EmployeeReader();
             target.Separator = ',';
-            string fileContents =
-                "143, 1I, 2013-11-01, 2014-01-05" + Environment.NewLine +
-                "218, 10, 2012-05-16, NULL" + Environment.NewLine +
-                "143, 10, 2009-01-01, 2011-04-27";
-            Stream data = new MemoryStream(Encoding.Default.GetBytes(fileContents));
+            string line = "143, I2, 2013-11-01, 2014-01-05";
 
             // Act
-            Assert.Throws<FormatException>(() => target.EnumerateRecords(data).ToArray());
-
-            data.Close();
+            Assert.Throws<FormatException>(() => target.ParseEmployeeRecord(line));
         }
 
         [Fact]
@@ -183,16 +172,10 @@ namespace Employees.Test
             // Arrange
             EmployeeReader target = new EmployeeReader();
             target.Separator = ',';
-            string fileContents =
-                "143, 11, 2013-11-01, 2014-01-05" + Environment.NewLine +
-                "218, 10, 15-16-2012, NULL" + Environment.NewLine +
-                "143, 10, 2009-01-01, 2011-04-27";
-            Stream data = new MemoryStream(Encoding.Default.GetBytes(fileContents));
+            string line = "218, 10, 15-16-2012, NULL";
 
             // Act
-            Assert.Throws<FormatException>(() => target.EnumerateRecords(data).ToArray());
-
-            data.Close();
+            Assert.Throws<FormatException>(() => target.ParseEmployeeRecord(line));
         }
 
         [Fact]
@@ -208,7 +191,7 @@ namespace Employees.Test
             Stream data = new MemoryStream(Encoding.Default.GetBytes(fileContents));
 
             // Act
-            Assert.Throws<InvalidDataException>(() => target.EnumerateRecords(data).ToArray());
+            Assert.ThrowsAsync<InvalidDataException>(async () => await target.ReadRecordsAsync(data));
 
             data.Close();
         }
