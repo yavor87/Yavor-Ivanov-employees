@@ -3,10 +3,28 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Employees.UI"
+        xmlns:vm="clr-namespace:Employees.UI.ViewModels"
         mc:Ignorable="d"
         Title="Employees">
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+    
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Button Content="Open file" Command="{Binding LoadFileCommand, Mode=OneTime}" />
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding Matches}" IsReadOnly="True" AutoGenerateColumns="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Employee ID #1" Binding="{Binding EmployeeID1}" />
+                <DataGridTextColumn Header="Employee ID #2" Binding="{Binding EmployeeID2}" />
+                <DataGridTextColumn Header="Project ID" Binding="{Binding ProjectID}" />
+                <DataGridTextColumn Header="Days worked" Binding="{Binding DaysWorked}" />
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </Window>
