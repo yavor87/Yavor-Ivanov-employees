@@ -14,9 +14,9 @@
             DaysWorked = daysWorked;
         }
 
-        public int EmployeeID1 { get; set; }
-        public int EmployeeID2 { get; set; }
-        public int ProjectID { get; set; }
+        public int EmployeeID1 { get; private set; }
+        public int EmployeeID2 { get; private set; }
+        public int ProjectID { get; private set; }
         public int DaysWorked { get; set; }
     }
 }

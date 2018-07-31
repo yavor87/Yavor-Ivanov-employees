@@ -11,7 +11,7 @@ namespace Employees.Core
     {
         public IEnumerable<ProjectEmployeeMatch> FindMatches(IReadOnlyCollection<EmployeeRecord> employees)
         {
-            List<ProjectEmployeeMatch> matches = new List<ProjectEmployeeMatch>();
+            Dictionary<Tuple<int, int>, ProjectEmployeeMatch> matches = new Dictionary<Tuple<int, int>, ProjectEmployeeMatch>();
             Comparer<EmployeeRecord> comparer = Comparer<EmployeeRecord>.Create((x, y) => x.EmployeeID.CompareTo(y.EmployeeID));
 
             var employeesByProjects = employees.GroupBy(empl => empl.ProjectID);
@@ -35,12 +35,22 @@ namespace Employees.Core
                         Math.Min((endA - startA).Days, (endA - startB).Days),
                         Math.Min((endB - startB).Days, (endB - startA).Days));
 
-                    matches.Add(new ProjectEmployeeMatch(projectID, employeeCombination.Item1.EmployeeID,
-                        employeeCombination.Item2.EmployeeID, daysDiff));
+                    ProjectEmployeeMatch match;
+                    var key = new Tuple<int, int>(employeeCombination.Item1.EmployeeID, employeeCombination.Item2.EmployeeID);
+                    if (matches.TryGetValue(key, out match))
+                    {
+                        match.DaysWorked += daysDiff;
+                    }
+                    else
+                    {
+                        match = new ProjectEmployeeMatch(projectID, employeeCombination.Item1.EmployeeID,
+                            employeeCombination.Item2.EmployeeID, daysDiff);
+                        matches.Add(key, match);
+                    }
                 }
             }
 
-            return matches;
+            return matches.Values;
         }
 
         static IEnumerable<Tuple<T, T>> GetKCombinations<T>(IEnumerable<T> list, IComparer<T> comparer)
